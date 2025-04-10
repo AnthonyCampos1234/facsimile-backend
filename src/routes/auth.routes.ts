@@ -43,7 +43,9 @@ router.get(
         'https://www.googleapis.com/auth/calendar.readonly'
       ],
       accessType: 'offline',
-      prompt: 'consent'
+      prompt: 'consent',
+      // Explicitly set the callback URL to match what's registered in Google Cloud
+      callbackURL: process.env.GOOGLE_CONNECT_CALLBACK_URL
     };
     passport.authenticate('google-connect', authOptions)(req, res, next);
   }
@@ -53,10 +55,14 @@ router.get(
 router.get(
   '/connect/google/callback',
   protectRoute,
-  passport.authenticate('google-connect', { 
-    session: false, 
-    failureRedirect: '/connect/error' 
-  }),
+  (req, res, next) => {
+    // The callbackURL should be set in the strategy options, not in passport.authenticate
+    // We've already configured it in the passport config, so just use standard options here
+    passport.authenticate('google-connect', { 
+      session: false, 
+      failureRedirect: '/connect/error' 
+    })(req, res, next);
+  },
   googleConnectCallback
 );
 

@@ -57,41 +57,19 @@ app.use(
 const apiPrefix = process.env.API_PREFIX || "/api/v1";
 app.use(`${apiPrefix}/auth`, authRoutes);
 
-// Direct routes for Google OAuth that match registered URIs in Google Cloud Console
+// Add the callback route to match what's registered in Google Cloud Console
 import { googleConnectCallback } from "./controllers/auth.controller";
 import { protectRoute } from "./middleware/auth.middleware";
 
-// Direct Google connect route with correct callback URL
-app.get(`${apiPrefix}/connect/google`, protectRoute, (req, res, next) => {
-  const authOptions = {
-    scope: [
-      'profile', 
-      'email',
-      'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/calendar.readonly'
-    ],
-    accessType: 'offline',
-    prompt: 'consent',
-    // State parameter for enhanced security
-    state: Math.random().toString(36).substring(2),
-    // Explicitly set the callbackURL to match exactly what's in Google Cloud Console
-    callbackURL: process.env.GOOGLE_CONNECT_CALLBACK_URL || 'http://localhost:3001/api/v1/connect/google/callback'
-  };
-  passport.authenticate('google-connect', authOptions)(req, res, next);
-});
-
-// Callback route that matches the registered URI in Google Cloud Console
+// Handle the callback from Google OAuth - this must match exactly what's registered
 app.get(
   `${apiPrefix}/connect/google/callback`,
   protectRoute,
   (req, res, next) => {
-    // Use the same callback URL for verification
-    const authOptions = {
-      callbackURL: process.env.GOOGLE_CONNECT_CALLBACK_URL || 'http://localhost:3001/api/v1/connect/google/callback',
-      session: false, 
+    passport.authenticate("google-connect", {
+      session: false,
       failureRedirect: "/connect/error"
-    };
-    passport.authenticate("google-connect", authOptions)(req, res, next);
+    })(req, res, next);
   },
   googleConnectCallback
 );
