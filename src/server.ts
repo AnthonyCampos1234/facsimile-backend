@@ -57,6 +57,38 @@ app.use(
 const apiPrefix = process.env.API_PREFIX || "/api/v1";
 app.use(`${apiPrefix}/auth`, authRoutes);
 
+// Direct routes for Google OAuth that match registered URIs in Google Cloud Console
+import { googleConnectCallback } from "./controllers/auth.controller";
+import { protectRoute } from "./middleware/auth.middleware";
+
+// Direct Google connect route with correct callback URL
+app.get(`${apiPrefix}/connect/google`, protectRoute, (req, res, next) => {
+  const authOptions = {
+    scope: [
+      'profile', 
+      'email',
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/calendar.readonly'
+    ],
+    accessType: 'offline',
+    prompt: 'consent',
+    // Override the callbackURL to match what's registered in Google Cloud Console
+    callbackURL: `http://localhost:3001${apiPrefix}/connect/google/callback`
+  };
+  passport.authenticate('google-connect', authOptions)(req, res, next);
+});
+
+// Callback route that matches the registered URI in Google Cloud Console
+app.get(
+  `${apiPrefix}/connect/google/callback`,
+  protectRoute,
+  passport.authenticate("google-connect", { 
+    session: false, 
+    failureRedirect: "/connect/error" 
+  }),
+  googleConnectCallback
+);
+
 // Home route
 app.get("/", (req: Request, res: Response) => {
   res.send("Facsimile API is running!");
