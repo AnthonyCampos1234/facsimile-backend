@@ -72,8 +72,10 @@ app.get(`${apiPrefix}/connect/google`, protectRoute, (req, res, next) => {
     ],
     accessType: 'offline',
     prompt: 'consent',
-    // Override the callbackURL to match what's registered in Google Cloud Console
-    callbackURL: `http://localhost:3001${apiPrefix}/connect/google/callback`
+    // State parameter for enhanced security
+    state: Math.random().toString(36).substring(2),
+    // Explicitly set the callbackURL to match exactly what's in Google Cloud Console
+    callbackURL: process.env.GOOGLE_CONNECT_CALLBACK_URL || 'http://localhost:3001/api/v1/connect/google/callback'
   };
   passport.authenticate('google-connect', authOptions)(req, res, next);
 });
@@ -82,10 +84,15 @@ app.get(`${apiPrefix}/connect/google`, protectRoute, (req, res, next) => {
 app.get(
   `${apiPrefix}/connect/google/callback`,
   protectRoute,
-  passport.authenticate("google-connect", { 
-    session: false, 
-    failureRedirect: "/connect/error" 
-  }),
+  (req, res, next) => {
+    // Use the same callback URL for verification
+    const authOptions = {
+      callbackURL: process.env.GOOGLE_CONNECT_CALLBACK_URL || 'http://localhost:3001/api/v1/connect/google/callback',
+      session: false, 
+      failureRedirect: "/connect/error"
+    };
+    passport.authenticate("google-connect", authOptions)(req, res, next);
+  },
   googleConnectCallback
 );
 
