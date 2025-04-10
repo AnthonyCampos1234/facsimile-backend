@@ -44,12 +44,14 @@ app.use(passport.initialize());
 configurePassport();
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-  methods: ["GET", "PUT", "POST", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.PORT || "http://localhost:3001",
+    methods: ["GET", "PUT", "POST", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 // API Routes
 const apiPrefix = process.env.API_PREFIX || "/api/v1";
